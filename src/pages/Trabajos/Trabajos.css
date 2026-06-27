@@ -120,3 +120,34 @@
   background: #ecfdf5;
   color: var(--verde);
 }
+
+.badge.revision {
+  background: var(--azul-bg);
+  color: var(--azul);
+}
+
+.revision-txt {
+  color: var(--azul);
+  font-weight: 600;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--verde);
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 12px 30px rgba(22, 163, 74, 0.35);
+  z-index: 1100;
+  animation: toast-in 0.2s ease;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}

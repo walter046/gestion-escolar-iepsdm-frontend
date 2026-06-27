@@ -72,6 +72,9 @@ function ChatWidget() {
           <div className="chat-input">
             <input
               type="text"
+              id="chat-mensaje"
+              name="mensaje"
+              autoComplete="off"
               value={mensaje}
               placeholder="Escribe tu pregunta..."
               onChange={(e) => setMensaje(e.target.value)}
