@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getDatosAcademicos } from "../../api/services";
 import "./Trabajos.css";
 
@@ -13,19 +13,36 @@ const FALLBACK = {
   ],
 };
 
+const STORAGE_KEY = "iepsdm_entregados_1";
 const keyOf = (t) => `${t.titulo}|${t.curso}`;
+
+function cargarEntregados() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
 
 function Trabajos() {
   const [data, setData] = useState(FALLBACK);
   const [tab, setTab] = useState("pendientes");
-  const [entregados, setEntregados] = useState([]);
+  const [entregados, setEntregados] = useState(cargarEntregados);
   const [toast, setToast] = useState("");
+  const toastTimer = useRef(null);
 
   useEffect(() => {
     getDatosAcademicos(1).then((d) => {
       if (d.online) setData(d);
     });
   }, []);
+
+  // Persiste las entregas para que NO se pierdan al navegar o recargar.
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entregados));
+  }, [entregados]);
+
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const entregadosKeys = new Set(entregados.map(keyOf));
   const pendientes = data.trabajosPendientes.filter((t) => !entregadosKeys.has(keyOf(t)));
@@ -35,10 +52,11 @@ function Trabajos() {
   ];
 
   const entregar = (t) => {
-    setEntregados((prev) => [...prev, t]);
+    if (entregadosKeys.has(keyOf(t))) return;
+    setEntregados((prev) => [...prev, { titulo: t.titulo, curso: t.curso, vence: t.vence }]);
     setToast(`✓ "${t.titulo}" entregado correctamente`);
-    window.clearTimeout(entregar._t);
-    entregar._t = window.setTimeout(() => setToast(""), 3000);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(""), 3000);
   };
 
   const esPend = tab === "pendientes";
