@@ -1,6 +1,53 @@
+import { useState } from "react";
+import axios from "axios";
 import "./Inicio.css";
 
 function Inicio() {
+  const [chatAbierto, setChatAbierto] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const [mensajes, setMensajes] = useState([
+    {
+      tipo: "bot",
+      texto: "Hola Juan, soy tu asistente IA. Pregúntame sobre cursos, tareas, notas o asistencia.",
+    },
+  ]);
+
+  const enviarMensaje = async () => {
+    if (!mensaje.trim() || cargando) return;
+
+    const pregunta = mensaje;
+
+    setMensajes((prev) => [...prev, { tipo: "user", texto: pregunta }]);
+    setMensaje("");
+    setCargando(true);
+
+    try {
+      const response = await axios.post("http://localhost:8080/api/chat", {
+        alumnoId: 1,
+        mensaje: pregunta,
+      });
+
+      setMensajes((prev) => [
+        ...prev,
+        {
+          tipo: "bot",
+          texto: response.data.respuesta || "No recibí respuesta del servidor.",
+        },
+      ]);
+    } catch (error) {
+      setMensajes((prev) => [
+        ...prev,
+        {
+          tipo: "bot",
+          texto: "No pude conectarme con el backend. Verifica que Spring Boot esté corriendo y que /api/chat funcione.",
+        },
+      ]);
+    } finally {
+      setCargando(false);
+    }
+  };
+
   return (
     <div className="inicio-page">
       <aside className="sidebar">
@@ -107,7 +154,9 @@ function Inicio() {
                 <h4>Programación Web</h4>
                 <p>Tarea 3</p>
               </div>
-              <strong>18 <small>/20</small></strong>
+              <strong>
+                18 <small>/20</small>
+              </strong>
             </div>
 
             <div className="grade">
@@ -116,7 +165,9 @@ function Inicio() {
                 <h4>Cálculo I</h4>
                 <p>Examen Parcial</p>
               </div>
-              <strong>16 <small>/20</small></strong>
+              <strong>
+                16 <small>/20</small>
+              </strong>
             </div>
 
             <div className="grade">
@@ -125,12 +176,53 @@ function Inicio() {
                 <h4>Historia Universal</h4>
                 <p>Ensayo 2</p>
               </div>
-              <strong>17 <small>/20</small></strong>
+              <strong>
+                17 <small>/20</small>
+              </strong>
             </div>
           </div>
         </section>
 
-        <button className="chat-btn">💬</button>
+        {chatAbierto && (
+          <div className="chat-window">
+            <div className="chat-header">
+              <div>
+                <strong>Asistente IA</strong>
+                <p>Campus Virtual</p>
+              </div>
+              <button onClick={() => setChatAbierto(false)}>×</button>
+            </div>
+
+            <div className="chat-body">
+              {mensajes.map((msg, index) => (
+                <div key={index} className={`chat-message ${msg.tipo}`}>
+                  {msg.texto}
+                </div>
+              ))}
+
+              {cargando && (
+                <div className="chat-message bot">Pensando respuesta...</div>
+              )}
+            </div>
+
+            <div className="chat-input">
+              <input
+                type="text"
+                value={mensaje}
+                placeholder="Escribe tu pregunta..."
+                onChange={(e) => setMensaje(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && enviarMensaje()}
+              />
+              <button onClick={enviarMensaje} disabled={cargando}>
+                Enviar
+              </button>
+            </div>
+          </div>
+        )}
+
+        <button className="chat-btn" onClick={() => setChatAbierto(true)}>
+          💬
+        </button>
       </main>
     </div>
   );
