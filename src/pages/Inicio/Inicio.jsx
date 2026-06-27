@@ -62,7 +62,7 @@ function Inicio() {
         <div className="panel">
           <div className="panel-head">
             <h2>Próximos Trabajos</h2>
-            <Link className="link-btn" to="/trabajos">Ver todos</Link>
+            <Link className="link-btn" to="/estudiante/trabajos">Ver todos</Link>
           </div>
           {data.proximosTrabajos.length === 0 && <p className="vacio">No tienes trabajos pendientes 🎉</p>}
           {data.proximosTrabajos.map((t, i) => (
@@ -81,7 +81,7 @@ function Inicio() {
         <div className="panel">
           <div className="panel-head">
             <h2>Calificaciones Recientes</h2>
-            <Link className="link-btn" to="/notas">Ver todas</Link>
+            <Link className="link-btn" to="/estudiante/notas">Ver todas</Link>
           </div>
           {data.calificaciones.length === 0 && <p className="vacio">Aún no hay calificaciones.</p>}
           {data.calificaciones.map((g, i) => (

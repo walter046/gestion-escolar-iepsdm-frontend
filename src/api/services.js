@@ -25,6 +25,72 @@ export const getNotas = () => safeGet("/notas");
 export const getEvaluaciones = () => safeGet("/evaluaciones");
 export const getAsistencias = () => safeGet("/asistencias");
 export const getAnuncios = () => safeGet("/anuncios");
+export const getUsuarios = () => safeGet("/usuarios");
+export const getRoles = () => safeGet("/roles");
+export const getPadres = () => safeGet("/padres");
+export const getMatriculas = () => safeGet("/matriculas");
+export const getSecciones = () => safeGet("/secciones");
+
+// ---- Escrituras (el portal docente registra notas y asistencia) ----
+export async function crearNota(payload) {
+  const { data } = await api.post("/notas", payload);
+  return data;
+}
+export async function crearAsistencia(payload) {
+  const { data } = await api.post("/asistencias", payload);
+  return data;
+}
+
+// ---- Autenticacion (provisional: contra los usuarios sembrados) ----
+// El backend aun no expone /auth/login. Cuando exista, se reemplaza esto.
+// Respaldo por si /roles no responde. Coincide con el dataset oficial del equipo.
+const ROL_BY_ID = { 1: "ESTUDIANTE", 2: "DOCENTE", 3: "ADMIN", 4: "PADRE" };
+
+export async function login(usuario) {
+  const [usuarios, roles, estudiantes, docentes, padres] = await Promise.all([
+    getUsuarios(), getRoles(), getEstudiantes(), getDocentes(), getPadres(),
+  ]);
+  const u = usuarios.find((x) => (x.usuario || "").toLowerCase() === usuario.toLowerCase());
+  if (!u) return null;
+
+  const rol = roles.find((r) => r.idRol === u.idRol)?.rol || ROL_BY_ID[u.idRol] || "ESTUDIANTE";
+  let idEntidad = null;
+  let nombre = u.usuario;
+
+  if (rol === "ESTUDIANTE") {
+    const e = estudiantes.find((x) => x.idUsuario === u.idUsuario);
+    if (e) { idEntidad = e.idEstudiante; nombre = `${e.nombres} ${e.apellidos}`; }
+  } else if (rol === "DOCENTE") {
+    const d = docentes.find((x) => x.idUsuario === u.idUsuario);
+    if (d) { idEntidad = d.idDocente; nombre = `${d.nombres} ${d.apellidos}`; }
+  } else if (rol === "PADRE") {
+    const p = padres.find((x) => x.idUsuario === u.idUsuario);
+    if (p) { idEntidad = p.idPadre; nombre = `${p.nombres} ${p.apellidos}`; }
+  } else {
+    nombre = "Administrador";
+  }
+
+  return { idUsuario: u.idUsuario, usuario: u.usuario, rol, nombre, idEntidad };
+}
+
+// ---- Cursos que dicta un docente ----
+export async function getCursosDeDocente(idDocente) {
+  const [cursos, docCursos] = await Promise.all([getCursos(), getDocentesCursos()]);
+  const cursoById = Object.fromEntries(cursos.map((c) => [c.idCurso, c]));
+  return docCursos
+    .filter((dc) => dc.idDocente === idDocente)
+    .map((dc) => ({ ...cursoById[dc.idCurso], idSeccion: dc.idSeccion, idDocenteCurso: dc.idDocenteCurso }))
+    .filter((c) => c.idCurso);
+}
+
+// ---- Estudiantes matriculados en una seccion ----
+export async function getEstudiantesDeSeccion(idSeccion) {
+  const [estudiantes, matriculas] = await Promise.all([getEstudiantes(), getMatriculas()]);
+  const idsSeccion = new Set(
+    matriculas.filter((m) => m.idSeccion === idSeccion).map((m) => m.idEstudiante)
+  );
+  return estudiantes.filter((e) => idsSeccion.has(e.idEstudiante));
+}
 
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
